@@ -1,0 +1,12 @@
+name = "newtaraneh-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "newtaraneh-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"   # بعد از ساخت دیتابیس جایگزین کنید
+
+# Secrets (با دستور wrangler secret put تنظیم می‌شوند):
+# BOT_TOKEN
+# WEBHOOK_SECRET  (اختیاری اما توصیه‌شده)
