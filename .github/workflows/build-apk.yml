@@ -19,9 +19,9 @@ jobs:
       - name: Fetch branded NewTaranehApp.kt
         run: |
           set -e
-          curl -fsSL "https://d.uguu.se/KBiGOGmn.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://d.uguu.se/ZeSvFYbu.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q BrandAssets android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q normalizeArtistKey android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
       - name: Download brand launcher icons (mdpi hdpi xhdpi xxhdpi xxxhdpi)
         run: |
