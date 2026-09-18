@@ -1,85 +1,47 @@
-name: Android APK
+name: Build NewTaraneh APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: ["main", "master"]
 
 permissions:
   contents: read
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Setup Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: "17"
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
-          packages: platform-tools
-
-      - name: Install Android platform and build-tools
-        run: |
-          set -e
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" || sdkmanager "platforms;android-34" "build-tools;34.0.0"
-          yes | sdkmanager --licenses || true
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
-      - name: Build web app for Capacitor
-        env:
-          DATABASE_URL: ""
-          CAPACITOR_BUILD: "1"
-          VITE_CAPACITOR: "1"
-        run: |
-          set -e
-          npm run build:android-web
-          echo "=== dist listing ==="
-          ls -la dist/ | head -30
-          if [ -f dist/capacitor-index.html ] && [ ! -f dist/index.html ]; then
-            mv dist/capacitor-index.html dist/index.html
-          fi
-          test -f dist/index.html
-          sed -i 's|href="/assets/|href="./assets/|g; s|src="/assets/|src="./assets/|g; s|href="/|href="./|g; s|src="/|src="./|g' dist/index.html || true
-          head -40 dist/index.html
-
-      - name: Add Android platform and sync
-        run: |
-          if [ ! -d android ]; then
-            npx cap add android
-          fi
-          npx cap sync android
-
-      - name: Inject BankSms plugin and SMS permissions
-        run: |
-          chmod +x scripts/inject-banksms.sh
-          bash scripts/inject-banksms.sh
+          gradle-version: "8.7"
 
       - name: Build Debug APK
         working-directory: android
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          gradle --version
+          gradle assembleDebug --no-daemon --stacktrace --console=plain
+
+      - name: Verify APK
+        run: |
+          test -f android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: nabz-debug-apk
+          name: NewTaraneh-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
