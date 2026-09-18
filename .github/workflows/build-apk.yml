@@ -22,58 +22,43 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Gradle
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq gradle || true
-          gradle --version || echo "system gradle not critical"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
 
-      - name: Setup Gradle Wrapper
+      - name: Grant execute permission for gradlew
+        working-directory: android
+        run: chmod +x gradlew || true
+
+      - name: Generate Gradle Wrapper (if missing)
         working-directory: android
         run: |
-          mkdir -p gradle/wrapper
-          if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
-            cat > gradle/wrapper/gradle-wrapper.properties << 'PROPS'
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
-networkTimeout=10000
-validateDistributionUrl=true
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
-PROPS
-          fi
-          # Download wrapper jar if missing
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            curl -sL -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.7.0/gradle/wrapper/gradle-wrapper.jar
-          fi
-          # Create gradlew if missing
-          if [ ! -f gradlew ]; then
-            curl -sL -o gradlew https://raw.githubusercontent.com/gradle/gradle/v8.7.0/gradlew
-            chmod +x gradlew
-          else
+          if [ ! -f gradlew ] || [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Gradle wrapper missing, generating..."
+            gradle wrapper --gradle-version 8.7
             chmod +x gradlew
           fi
-          ls -la
-          ls -la gradle/wrapper/
 
       - name: Build Debug APK
         working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon
+        run: ./gradlew assembleDebug --stacktrace
 
-      - name: List APK outputs
-        if: always()
-        run: |
-          find android -name "*.apk" 2>/dev/null || echo "No APK found yet"
-          ls -la android/app/build/outputs/apk/debug/ 2>/dev/null || true
+      - name: Build Release APK (unsigned)
+        working-directory: android
+        run: ./gradlew assembleRelease --stacktrace
+        continue-on-error: true
 
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
-        if: success()
         with:
-          name: NewTaraneh-APK
+          name: NewTaraneh-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewTaraneh-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
