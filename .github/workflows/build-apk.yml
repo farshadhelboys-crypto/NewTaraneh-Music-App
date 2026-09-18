@@ -16,7 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download brand launcher icons (all densities)
+      - name: Fetch branded NewTaranehApp.kt
+        run: |
+          set -e
+          curl -fsSL "https://d.uguu.se/KBiGOGmn.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q BrandAssets android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+
+      - name: Download brand launcher icons (mdpi hdpi xhdpi xxhdpi xxxhdpi)
         run: |
           set -e
           ICON_URL="https://d.uguu.se/NDZtCppq.png"
