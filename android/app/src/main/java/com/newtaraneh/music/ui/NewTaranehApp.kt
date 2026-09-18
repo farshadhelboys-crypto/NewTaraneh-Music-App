@@ -57,9 +57,13 @@ fun NewTaranehApp() {
     }
 
     fun playSong(song: SongDto) {
+        // پخش واقعی از API (redirect به فایل تلگرام)
         val url = "${BASE_URL}songs/${song.id}/stream"
+        player.stop()
+        player.clearMediaItems()
         player.setMediaItem(MediaItem.fromUri(url))
         player.prepare()
+        player.playWhenReady = true
         player.play()
         currentSong = song
         isPlaying = true
@@ -325,9 +329,12 @@ private fun SongCard(
 
 @Composable
 private fun SongCover(song: SongDto, size: androidx.compose.ui.unit.Dp) {
-    val url = if (!song.thumbnail_file_id.isNullOrBlank()) {
-        "${BASE_URL}songs/${song.id}/cover"
-    } else null
+    // اول cover_url از API، بعد endpoint کاور، در نهایت placeholder
+    val url = when {
+        !song.cover_url.isNullOrBlank() -> song.cover_url
+        !song.thumbnail_file_id.isNullOrBlank() -> "${BASE_URL}songs/${song.id}/cover"
+        else -> null
+    }
 
     if (url != null) {
         AsyncImage(
