@@ -393,7 +393,7 @@ private fun SearchScreen(
         searched = true
         scope.launch {
             try {
-                songs = ApiClient.service.getSongs(q = query.trim(), limit = 40).songs
+                songs = ApiClient.service.getSongs(query = query.trim(), limit = 40).songs
             } catch (_: Exception) {
                 songs = emptyList()
             } finally {
@@ -541,7 +541,7 @@ private fun downloadSong(context: Context, song: SongDto) {
 }
 
 private fun sanitizeFileName(name: String): String =
-    name.replace(Regex("""[\\/:*?"<>|]"""), "_").take(120)
+    name.replace(Regex("""[\\/:*?\"<>|]"""), "_").take(120)
 
 private fun openTelegram(context: Context, url: String) {
     runCatching {
