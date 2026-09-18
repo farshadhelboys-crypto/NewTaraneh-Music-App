@@ -190,6 +190,26 @@ export default {
       });
     }
 
+    // GET /songs/:id/cover → temporary Telegram thumbnail URL
+    if (path.match(/^\/songs\/\d+\/cover$/) && request.method === "GET") {
+      const id = path.split("/")[2];
+      const song = await env.DB.prepare(
+        `SELECT thumbnail_file_id FROM songs WHERE id = ?`
+      ).bind(id).first() as any;
+
+      if (!song) return new Response("Not found", { status: 404, headers: corsHeaders });
+      if (!song.thumbnail_file_id) {
+        return new Response("No cover", { status: 404, headers: corsHeaders });
+      }
+
+      const fileUrl = await getFileUrl(song.thumbnail_file_id, env);
+      if (!fileUrl) {
+        return new Response("Cover unavailable", { status: 502, headers: corsHeaders });
+      }
+
+      return Response.redirect(fileUrl, 302);
+    }
+
     // GET /songs/:id/stream  → temporary Telegram file URL
     if (path.match(/^\/songs\/\d+\/stream$/) && request.method === "GET") {
       const id = path.split("/")[2];
