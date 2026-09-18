@@ -1,64 +1,85 @@
-name: Build NewTaraneh APK
+name: Android APK
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: 21
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: android-actions/setup-android@v4
         with:
-          gradle-version: '8.7'
+          packages: platform-tools
 
-      - name: Grant execute permission for gradlew
-        working-directory: android
-        run: chmod +x gradlew || true
-
-      - name: Generate Gradle Wrapper (if missing)
-        working-directory: android
+      - name: Install Android platform and build-tools
         run: |
-          if [ ! -f gradlew ] || [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "Gradle wrapper missing, generating..."
-            gradle wrapper --gradle-version 8.7
-            chmod +x gradlew
+          set -e
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" || sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses || true
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build web app for Capacitor
+        env:
+          DATABASE_URL: ""
+          CAPACITOR_BUILD: "1"
+          VITE_CAPACITOR: "1"
+        run: |
+          set -e
+          npm run build:android-web
+          echo "=== dist listing ==="
+          ls -la dist/ | head -30
+          if [ -f dist/capacitor-index.html ] && [ ! -f dist/index.html ]; then
+            mv dist/capacitor-index.html dist/index.html
           fi
+          test -f dist/index.html
+          sed -i 's|href="/assets/|href="./assets/|g; s|src="/assets/|src="./assets/|g; s|href="/|href="./|g; s|src="/|src="./|g' dist/index.html || true
+          head -40 dist/index.html
+
+      - name: Add Android platform and sync
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Inject BankSms plugin and SMS permissions
+        run: |
+          chmod +x scripts/inject-banksms.sh
+          bash scripts/inject-banksms.sh
 
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Build Release APK (unsigned)
-        working-directory: android
-        run: ./gradlew assembleRelease --stacktrace
-        continue-on-error: true
-
-      - name: Upload Debug APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NewTaraneh-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: warn
-
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NewTaraneh-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
-          if-no-files-found: warn
+          name: nabz-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
