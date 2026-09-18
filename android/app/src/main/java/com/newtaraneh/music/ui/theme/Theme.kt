@@ -5,19 +5,25 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val NeonBlue = Color(0xFF00B4FF)
-val NeonCyan = Color(0xFF00E5FF)
-val DeepBlack = Color(0xFF0A0E17)
-val CardDark = Color(0xFF121826)
+val NeonBlue = Color(0xFF19A7FF)
+val NeonCyan = Color(0xFF35E6FF)
+val DeepBlack = Color(0xFF071019)
+val CardDark = Color(0xFF101C29)
+val SurfaceDark = Color(0xFF0D1722)
+val TextMuted = Color(0xFF9AAABD)
 
 private val DarkColorScheme = darkColorScheme(
     primary = NeonBlue,
     secondary = NeonCyan,
+    tertiary = NeonCyan,
     background = DeepBlack,
-    surface = CardDark,
+    surface = SurfaceDark,
+    surfaceVariant = CardDark,
     onPrimary = Color.Black,
+    onSecondary = Color.Black,
     onBackground = Color.White,
-    onSurface = Color.White
+    onSurface = Color.White,
+    onSurfaceVariant = TextMuted
 )
 
 @Composable
