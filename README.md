@@ -2,49 +2,50 @@
 
 اپلیکیشن رسمی اندروید کانال **نیو ترانه** (`@NewTaraneh`)
 
-پخش آنلاین + دانلود + رابط کاربری شیک نئون آبی
+پخش آنلاین + دانلود + رابط کاربری شیک نئون آبی (سبک آهنگیفای)
 
-## ویژگی‌ها
-- پخش آنلاین با Media3 / ExoPlayer
-- دانلود موزیک با نوتیفیکیشن
-- جستجو و لیست جدیدترین‌ها
-- تم دارک نئون مطابق برند
-- دکمه پشتیبانی → `@NewTaranehAdmin`
-- دکمه تبلیغات → `@NewTaranehAds`
-- بک‌اند رایگان روی Cloudflare Workers + D1
-- بیلد خودکار با GitHub Actions
+**API زنده:** https://newtaraneh-api.farshadhelboys.workers.dev
+
+## ویژگی‌های فعلی
+- دریافت خودکار آهنگ‌های جدید از کانال تلگرام
+- نمایش کاور + عنوان + خواننده
+- پخش آنلاین و دانلود مستقیم
+- جستجو
+- تم دارک نئون آبی
+- دکمه پشتیبانی و تبلیغات
+- بک‌اند Cloudflare Workers + D1 (رایگان)
+- GitHub Actions برای بیلد APK
 
 ## ساختار پروژه
 
 ```
 NewTaraneh-Music-App/
-├── android/                 # پروژه کامل اندروید (Kotlin + Compose)
-├── backend/                 # Cloudflare Worker (TypeScript)
-├── assets/                  # لوگو و تصاویر برند
+├── android/                 # اپ اندروید (Kotlin + Jetpack Compose)
+├── backend/                 # Cloudflare Worker
 ├── .github/workflows/       # بیلد خودکار APK
 └── README.md
 ```
 
-## راه‌اندازی سریع
+## چگونه APK بگیری؟
 
-### ۱. بک‌اند (Cloudflare)
+### روش ۱: GitHub Actions (پیشنهادی)
+1. برو به ریپو: https://github.com/farshadhelboys-crypto/NewTaraneh-Music-App
+2. تب **Actions** را باز کن
+3. روی **Build NewTaraneh APK** کلیک کن
+4. **Run workflow** بزن
+5. بعد از اتمام بیلد، فایل APK را از بخش Artifacts دانلود کن
 
-1. یک حساب Cloudflare بسازید (رایگان)
-2. `wrangler` را نصب کنید:
-   ```bash
-   npm install -g wrangler
-   wrangler login
-   ```
-3. به پوشه `backend` بروید و دستورات را اجرا کنید (جزئیات در `backend/README.md`)
+### روش ۲: Android Studio
+1. پروژه را Clone کن
+2. پوشه `android` را با Android Studio باز کن
+3. یک بار Sync و Build بگیر (تا gradlew ساخته شود)
+4. بعد از آن Actions هم کامل کار می‌کند
 
-### ۲. ربات تلگرام
-
-ربات فعلی: `@appbotfornewtaranehbot`  
-توکن را در **GitHub Secrets** و **Cloudflare Secrets** ذخیره کنید (هرگز در کد نگذارید).
-
-### ۳. اپ اندروید
-
-پروژه در پوشه `android` آماده است. با Android Studio باز کنید و بیلد بگیرید، یا از GitHub Actions استفاده کنید.
+## وضعیت بک‌اند
+- Worker: فعال
+- دیتابیس: فعال
+- ربات: متصل به کانال
+- هر پست صوتی جدید کانال خودکار اضافه می‌شود
 
 ## لینک‌های رسمی
 - کانال: https://t.me/NewTaraneh
