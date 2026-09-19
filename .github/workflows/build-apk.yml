@@ -19,7 +19,7 @@ jobs:
       - name: Fetch NewTaranehApp.kt v2.0
         run: |
           set -e
-          curl -fsSL "https://h.uguu.se/ZrKdoaOy.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://n.uguu.se/LjFxXBmE.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           grep -q PlayerHolder android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
