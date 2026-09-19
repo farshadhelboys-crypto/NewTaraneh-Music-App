@@ -12,8 +12,8 @@ android {
         applicationId = "com.newtaraneh.music"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.6.0"
+        versionCode = 20
+        versionName = "2.0.0"
     }
 
     buildTypes {
@@ -59,4 +59,5 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("com.google.guava:guava:33.0.0-android")
 }
