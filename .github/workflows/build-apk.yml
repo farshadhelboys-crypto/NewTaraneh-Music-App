@@ -16,24 +16,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch full NewTaranehApp.kt
+      - name: Fetch NewTaranehApp.kt v2.0
         run: |
           set -e
-          curl -fsSL "https://h.uguu.se/nwlGKfUU.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://n.uguu.se/LDZnhddf.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q PlayerHolder android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q FullPlayerSheet android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           grep -q EngagementWorker android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q SuggestedScreen android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
       - name: Circular launcher icons
         run: |
           set -e
           ICON_URL="https://h.uguu.se/CtOVgFoT.png"
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
-          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-            dens=${d%%:*}; px=${d##*:}
-            mkdir -p android/app/src/main/res/mipmap-$dens
-          done
-          mkdir -p android/app/src/main/res/drawable
+          for dens in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$dens; done
           curl -fsSL "$ICON_URL" -o /tmp/brand_icon.png
           convert /tmp/brand_icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert /tmp/brand_icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
