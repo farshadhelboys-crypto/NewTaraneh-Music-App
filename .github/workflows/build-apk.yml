@@ -11,25 +11,28 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch NewTaranehApp.kt v2.2
-        run: |
-          set -e
-          curl -fsSL "https://h.uguu.se/qoHyDbAv.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q BackHandler android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q brand_logo android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-
-      - name: Embed brand images inside APK (no Iran filter)
+      - name: Embed brand images from local base64 (no external CDN)
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
-          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$d; done
-          curl -fsSL "https://d.uguu.se/lBhKVftP.jpg" -o android/app/src/main/res/drawable/brand_logo.jpg
-          curl -fsSL "https://h.uguu.se/UOJsyKiy.jpg" -o android/app/src/main/res/drawable/brand_banner.jpg
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p android/app/src/main/res/mipmap-$d
+          done
+          python3 - <<'PY'
+          import base64, pathlib
+          root = pathlib.Path(".")
+          logo_b64 = (root / "assets" / "brand_logo.b64").read_text().strip()
+          banner_b64 = (root / "assets" / "brand_banner.b64").read_text().strip()
+          for name, data in [("brand_logo.jpg", logo_b64), ("brand_banner.jpg", banner_b64)]:
+              if "," in data:
+                  data = data.split(",", 1)[1]
+              out = root / "android/app/src/main/res/drawable" / name
+              out.write_bytes(base64.b64decode(data))
+              print(name, out.stat().st_size, "bytes")
+          PY
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -37,6 +40,17 @@ jobs:
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           ls -la android/app/src/main/res/drawable/
+
+      - name: Verify app sources
+        run: |
+          test -f android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q BackHandler android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q brand_logo android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q baseStats android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q canNavigateBack android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          test -s assets/brand_logo.b64
+          test -s assets/brand_banner.b64
 
       - uses: actions/setup-java@v4
         with:
