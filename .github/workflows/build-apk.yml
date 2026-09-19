@@ -14,51 +14,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch NewTaranehApp.kt v2.3 (BackHandler + stats)
+      - name: Fetch NewTaranehApp.kt v2.4 (like anim + search EQ)
         run: |
           set -e
-          curl -fsSL "https://h.uguu.se/ESpqWsTp.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          mkdir -p android/app/src/main/java/com/newtaraneh/music/ui
+          curl -fsSL "https://h.uguu.se/nPDUyHxj.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q canNavigateBack android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q baseStats android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q brand_logo android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q SearchEqualizerBackground android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q likeScale android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q BackHandler android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
-      - name: Embed brand images (local base64 first, uguu fallback)
+      - name: Embed brand images
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$d; done
-          python3 - <<'PY'
-          import base64, pathlib, urllib.request, sys
-          root = pathlib.Path(".")
-          drawable = root / "android/app/src/main/res/drawable"
-          def write_jpg(name, b64_path, urls):
-              out = drawable / name
-              try:
-                  data = (root / b64_path).read_text().strip()
-                  if "," in data: data = data.split(",", 1)[1]
-                  raw = base64.b64decode(data)
-                  if len(raw) > 2000 and raw[:3] == b"\xff\xd8\xff":
-                      out.write_bytes(raw)
-                      print(name, "from local b64", len(raw))
-                      return
-              except Exception as e:
-                  print("local fail", e)
-              for u in urls:
-                  try:
-                      raw = urllib.request.urlopen(u, timeout=30).read()
-                      if raw[:3] == b"\xff\xd8\xff":
-                          out.write_bytes(raw)
-                          print(name, "from", u, len(raw))
-                          return
-                  except Exception as e:
-                      print("url fail", u, e)
-              print("FAILED", name); sys.exit(1)
-          write_jpg("brand_logo.jpg", "assets/brand_logo.b64",
-                    ["https://d.uguu.se/EGxXQtpd.jpg"])
-          write_jpg("brand_banner.jpg", "assets/brand_banner.b64",
-                    ["https://n.uguu.se/ONnGRFPF.jpg"])
-          PY
+          curl -fsSL "https://d.uguu.se/EGxXQtpd.jpg" -o android/app/src/main/res/drawable/brand_logo.jpg
+          curl -fsSL "https://n.uguu.se/ONnGRFPF.jpg" -o android/app/src/main/res/drawable/brand_banner.jpg
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
