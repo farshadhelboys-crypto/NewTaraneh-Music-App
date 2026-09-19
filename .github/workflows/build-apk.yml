@@ -17,7 +17,7 @@ jobs:
       - name: Fetch NewTaranehApp.kt v2.3 (BackHandler + stats)
         run: |
           set -e
-          curl -fsSL "https://d.uguu.se/DVGxSQjk.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://h.uguu.se/ESpqWsTp.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           grep -q canNavigateBack android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           grep -q baseStats android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
