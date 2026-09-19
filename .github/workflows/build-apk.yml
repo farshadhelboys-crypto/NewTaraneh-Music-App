@@ -16,17 +16,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch branded NewTaranehApp.kt
+      - name: Fetch NewTaranehApp.kt (latest features)
         run: |
           set -e
-          curl -fsSL "https://d.uguu.se/ZeSvFYbu.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://d.uguu.se/qldfvHPw.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q normalizeArtistKey android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q BrandAssets android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q SearchUtil android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
-      - name: Download brand launcher icons (mdpi hdpi xhdpi xxhdpi xxxhdpi)
+      - name: Circular launcher icons (mdpi..xxxhdpi)
         run: |
           set -e
-          ICON_URL="https://d.uguu.se/NDZtCppq.png"
+          ICON_URL="https://h.uguu.se/CtOVgFoT.png"
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           mkdir -p android/app/src/main/res/mipmap-mdpi
           mkdir -p android/app/src/main/res/mipmap-hdpi
