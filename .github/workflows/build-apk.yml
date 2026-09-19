@@ -16,25 +16,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch NewTaranehApp.kt v2.0
+      - name: Decode local brand drawables (no network filter)
         run: |
           set -e
-          curl -fsSL "https://n.uguu.se/LjFxXBmE.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q PlayerHolder android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-
-      - name: Circular launcher icons
-        run: |
-          set -e
-          ICON_URL="https://d.uguu.se/RFmOWovL.png"
+          mkdir -p android/app/src/main/res/drawable
+          mkdir -p android/app/src/main/res/mipmap-mdpi android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi android/app/src/main/res/mipmap-xxhdpi android/app/src/main/res/mipmap-xxxhdpi
+          base64 -d assets/brand_logo.b64 > android/app/src/main/res/drawable/brand_logo.jpg
+          base64 -d assets/brand_banner.b64 > android/app/src/main/res/drawable/brand_banner.jpg
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
-          for dens in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$dens; done
-          curl -fsSL "$ICON_URL" -o /tmp/brand_icon.png
-          convert /tmp/brand_icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert /tmp/brand_icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert /tmp/brand_icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert /tmp/brand_icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert /tmp/brand_icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          ls -la android/app/src/main/res/drawable/
+
+      - name: Fetch NewTaranehApp.kt
+        run: |
+          set -e
+          curl -fsSL "https://raw.githubusercontent.com/farshadhelboys-crypto/NewTaraneh-Music-App/main/android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt" -o /tmp/check.kt || true
+          # file is in repo after this push; use checkout path
+          test -f android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q BackHandler android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q brand_logo android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

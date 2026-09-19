@@ -1,6 +1,10 @@
 package com.newtaraneh.music.ui
 
+import androidx.annotation.DrawableRes
+import com.newtaraneh.music.R
+
 object BrandAssets {
-    const val LOGO_URL = "https://d.uguu.se/RFmOWovL.png"
-    const val BANNER_URL = "https://h.uguu.se/zJnbVYrt.jpg"
+    /** منابع محلی داخل APK — بدون اینترنت و بدون فیلتر */
+    @DrawableRes val LOGO_RES: Int = R.drawable.brand_logo
+    @DrawableRes val BANNER_RES: Int = R.drawable.brand_banner
 }
