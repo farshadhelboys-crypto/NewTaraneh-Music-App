@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NewTaraneh Admin</title>
+<style>
+  :root { --bg:#0a0e14; --card:#141b26; --cyan:#00e5ff; --blue:#3d7cff; --muted:#8b9bb4; --danger:#ff4d6d; --ok:#2ee59d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Tahoma,"Segoe UI",system-ui,sans-serif; background:linear-gradient(160deg,#031018 0%,var(--bg) 40%,#0d1520 100%); color:#fff; min-height:100vh; padding:20px 14px 40px; }
+  .wrap { max-width:720px; margin:0 auto; }
+  header { text-align:center; margin-bottom:22px; }
+  header h1 { font-size:1.45rem; color:var(--cyan); margin-bottom:6px; }
+  header p { color:var(--muted); font-size:0.9rem; }
+  .card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px; border:1px solid rgba(0,229,255,0.12); }
+  label { display:block; color:var(--muted); font-size:0.85rem; margin-bottom:6px; }
+  input[type="text"], input[type="password"] { width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:#0c121a; color:#fff; font-size:1rem; outline:none; }
+  input:focus { border-color:var(--cyan); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  button { border:none; border-radius:12px; padding:12px 18px; font-size:0.95rem; cursor:pointer; font-weight:600; }
+  .btn-primary { background:linear-gradient(90deg,var(--cyan),var(--blue)); color:#000; flex:1; }
+  .btn-ghost { background:rgba(255,255,255,0.06); color:#fff; }
+  .btn-danger { background:var(--danger); color:#fff; padding:8px 14px; font-size:0.85rem; }
+  .status { margin-top:10px; padding:10px 12px; border-radius:10px; font-size:0.9rem; display:none; }
+  .status.show { display:block; }
+  .status.ok { background:rgba(46,229,157,0.15); color:var(--ok); }
+  .status.err { background:rgba(255,77,109,0.15); color:var(--danger); }
+  .status.info { background:rgba(0,229,255,0.1); color:var(--cyan); }
+  .song { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; background:#0c121a; margin-bottom:8px; border:1px solid transparent; }
+  .song:hover { border-color:rgba(0,229,255,0.25); }
+  .song .info { flex:1; min-width:0; }
+  .song .title { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .song .meta { color:var(--muted); font-size:0.8rem; margin-top:3px; }
+  .badge { font-size:0.7rem; padding:2px 8px; border-radius:20px; background:rgba(0,229,255,0.15); color:var(--cyan); }
+  .empty { text-align:center; color:var(--muted); padding:28px 10px; }
+  .count { color:var(--muted); font-size:0.85rem; margin:8px 0 4px; }
+  .hint { font-size:0.8rem; color:var(--muted); margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>پنل مدیریت نیو ترانه</h1>
+    <p>حذف آسان آهنگ با نام — بدون درگیر شدن با عدد ID</p>
+  </header>
+  <div class="card">
+    <label>کلید ادمین</label>
+    <input type="password" id="adminKey" value="newtaraneh_admin_2026" placeholder="کلید ادمین"/>
+    <div class="row">
+      <button class="btn-primary" onclick="loadSongs()">بارگذاری لیست آهنگ‌ها</button>
+      <button class="btn-ghost" onclick="purge()">پاک‌سازی فایل‌های مرده</button>
+    </div>
+    <div class="hint">کلید پیش‌فرض همان Worker است. اگر عوض کردی اینجا هم بگذار.</div>
+  </div>
+  <div class="card">
+    <label>جستجو با نام آهنگ یا خواننده</label>
+    <input type="text" id="search" placeholder="مثلاً: خانومی یا عرفان..." oninput="filterList()"/>
+    <div class="count" id="count"></div>
+    <div class="list" id="list"><div class="empty">روی «بارگذاری لیست» بزن</div></div>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+<script>
+const API = 'https://newtaraneh-api.farshadhelboys.workers.dev';
+let allSongs = [];
+function key() { return document.getElementById('adminKey').value.trim(); }
+function show(msg, type) {
+  const el = document.getElementById('status');
+  el.className = 'status show ' + type;
+  el.textContent = msg;
+}
+async function loadSongs() {
+  show('در حال دریافت لیست...', 'info');
+  try {
+    allSongs = [];
+    let page = 1;
+    while (page < 20) {
+      const res = await fetch(API + '/songs?limit=50&page=' + page);
+      if (!res.ok) throw new Error('خطا در دریافت لیست');
+      const data = await res.json();
+      const batch = data.songs || [];
+      allSongs = allSongs.concat(batch);
+      if (batch.length < 50) break;
+      page++;
+    }
+    filterList();
+    show(allSongs.length + ' آهنگ بارگذاری شد', 'ok');
+  } catch (e) { show(e.message || 'خطا', 'err'); }
+}
+function filterList() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const list = q
+    ? allSongs.filter(s => (s.title || '').toLowerCase().includes(q) || (s.artist || '').toLowerCase().includes(q))
+    : allSongs;
+  document.getElementById('count').textContent = list.length ? (list.length + ' مورد' + (q ? ' (فیلتر شده)' : '')) : '';
+  const box = document.getElementById('list');
+  if (!list.length) { box.innerHTML = '<div class="empty">آهنگی پیدا نشد</div>'; return; }
+  box.innerHTML = list.map(function(s) {
+    const title = escapeHtml(s.title || 'بدون عنوان');
+    const artist = escapeHtml(s.artist || '-');
+    const id = s.id;
+    return '<div class="song" data-id="' + id + '" data-title="' + title.replace(/"/g, '&quot;') + '">' +
+      '<div class="info"><div class="title">' + title + '</div>' +
+      '<div class="meta">' + artist + ' · <span class="badge">id:' + id + '</span></div></div>' +
+      '<button class="btn-danger" data-action="del">حذف</button></div>';
+  }).join('');
+  box.querySelectorAll('[data-action="del"]').forEach(function(btn) {
+    btn.onclick = function() {
+      const row = btn.closest('.song');
+      deleteSong(Number(row.getAttribute('data-id')), row.getAttribute('data-title') || '');
+    };
+  });
+}
+function escapeHtml(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+async function deleteSong(id, title) {
+  if (!confirm('مطمئنی آهنگ «' + title + '» حذف شود؟\nاز اپ هم دیگر دیده نمی‌شود.')) return;
+  show('در حال حذف «' + title + '»...', 'info');
+  try {
+    const res = await fetch(API + '/songs/' + id, { method: 'DELETE', headers: { 'X-Admin-Key': key() } });
+    if (res.status === 403) throw new Error('کلید ادمین اشتباه است');
+    if (!res.ok) throw new Error('حذف انجام نشد');
+    allSongs = allSongs.filter(s => s.id !== id);
+    filterList();
+    show('«' + title + '» حذف شد', 'ok');
+  } catch (e) { show(e.message || 'خطا در حذف', 'err'); }
+}
+async function purge() {
+  if (!confirm('آهنگ‌هایی که فایل‌شان در تلگرام دیگر نیست پاک شوند؟')) return;
+  show('در حال پاک‌سازی...', 'info');
+  try {
+    const res = await fetch(API + '/admin/purge', { method: 'POST', headers: { 'X-Admin-Key': key() } });
+    if (res.status === 403) throw new Error('کلید ادمین اشتباه است');
+    const data = await res.json();
+    show((data.removed || 0) + ' آهنگ مرده حذف شد', 'ok');
+    await loadSongs();
+  } catch (e) { show(e.message || 'خطا', 'err'); }
+}
+loadSongs();
+</script>
+</body>
+</html>
