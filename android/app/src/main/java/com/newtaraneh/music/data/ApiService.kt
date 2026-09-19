@@ -13,7 +13,8 @@ interface ApiService {
     suspend fun getSongs(
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 30,
-        @Query("q") query: String? = null
+        @Query("q") query: String? = null,
+        @Query("suggested") suggested: Int? = null
     ): SongsResponse
 
     @GET("songs/{id}")
@@ -36,7 +37,8 @@ data class SongDto(
     val thumbnail_file_id: String?,
     val created_at: Long?,
     val caption: String?,
-    val cover_url: String?
+    val cover_url: String?,
+    val is_suggested: Int? = 0
 )
 
 data class SongDetail(
