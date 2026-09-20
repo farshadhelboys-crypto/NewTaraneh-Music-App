@@ -17,7 +17,8 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 40,
         @Query("q") query: String? = null,
-        @Query("suggested") suggested: Int? = null
+        @Query("suggested") suggested: Int? = null,
+        @Query("tag") tag: String? = null
     ): SongsResponse
 
     @GET("songs/{id}")
@@ -30,7 +31,12 @@ interface ApiService {
     ): Map<String, Any>
 }
 
-data class SongsResponse(val page: Int, val limit: Int, val songs: List<SongDto>)
+data class SongsResponse(
+    val page: Int,
+    val limit: Int,
+    val tag: String? = null,
+    val songs: List<SongDto>
+)
 
 data class SongDto(
     val id: Long,

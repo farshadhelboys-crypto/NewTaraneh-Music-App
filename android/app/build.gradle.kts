@@ -12,14 +12,29 @@ android {
         applicationId = "com.newtaraneh.music"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
-        versionName = "2.5.0"
+        versionCode = 26
+        versionName = "2.6.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystoreFile = file("newtaraneh-release.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "NewTaraneh2026Secure!"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "newtaraneh"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "NewTaraneh2026Secure!"
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
         }
     }
 
