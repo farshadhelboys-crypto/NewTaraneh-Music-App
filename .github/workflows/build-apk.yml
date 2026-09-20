@@ -27,7 +27,7 @@ jobs:
           grep -q songMatchesCategory "$KT"
           echo "NewTaranehApp.kt OK"
 
-      - name: Embed REAL brand + category images (3D remix cover)
+      - name: Embed REAL brand + category images (user remix cover)
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
@@ -79,7 +79,7 @@ jobs:
               "sonnati": "https://d.uguu.se/aklTpLxp.jpg",
               "rap": "https://h.uguu.se/rUKWwSqQ.jpg",
               "pop": "https://n.uguu.se/QPhGrQdg.jpg",
-              "remix": "https://n.uguu.se/ytPcLygh.jpg",
+              "remix": "https://h.uguu.se/zUuScEZO.jpg",
           }
           for c, url in cats.items():
               write(f"cat_{c}.jpg", [
