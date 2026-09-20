@@ -1,0 +1,1 @@
+Category covers for New Taraneh home categories section. Used by CI to embed into APK drawable.
