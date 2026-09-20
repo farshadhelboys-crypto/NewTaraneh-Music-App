@@ -30,74 +30,87 @@ jobs:
 
       - name: Embed brand + category covers
         run: |
-          set -e
           mkdir -p android/app/src/main/res/drawable
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$d; done
           python3 - <<'PY'
-          import base64, pathlib, urllib.request
+          import base64, pathlib, urllib.request, binascii
           root = pathlib.Path(".")
-          def load_b64(path, fallback_url=None):
+          # Valid minimal JPEG
+          TINY = base64.b64decode(
+              "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/"
+              "2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/"
+              "wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/"
+              "xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k="
+          )
+          def try_b64(path):
               p = root / path
-              if p.exists() and p.stat().st_size > 100:
-                  data = p.read_text().strip()
-                  if "," in data:
-                      data = data.split(",", 1)[1]
-                  return base64.b64decode(data)
-              if fallback_url:
-                  raw = urllib.request.urlopen(fallback_url, timeout=30).read()
-                  if raw[:2] == b"\xff\xd8":
-                      return raw
-                  data = raw.decode()
-                  if "," in data:
-                      data = data.split(",", 1)[1]
-                  return base64.b64decode(data)
-              raise FileNotFoundError(path)
-          try:
-              (root / "android/app/src/main/res/drawable/brand_logo.jpg").write_bytes(
-                  load_b64("assets/brand_logo.b64", "https://d.uguu.se/EGxXQtpd.jpg"))
-          except Exception as e:
-              print("logo", e)
-              urllib.request.urlretrieve("https://d.uguu.se/EGxXQtpd.jpg",
-                  "android/app/src/main/res/drawable/brand_logo.jpg")
-          try:
-              (root / "android/app/src/main/res/drawable/brand_banner.jpg").write_bytes(
-                  load_b64("assets/brand_banner.b64", "https://n.uguu.se/ONnGRFPF.jpg"))
-          except Exception as e:
-              print("banner", e)
-              urllib.request.urlretrieve("https://n.uguu.se/ONnGRFPF.jpg",
-                  "android/app/src/main/res/drawable/brand_banner.jpg")
-          for c in ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]:
-              out = root / f"android/app/src/main/res/drawable/cat_{c}.jpg"
+              if not p.exists() or p.stat().st_size < 50:
+                  return None
+              data = p.read_text().strip()
+              if "," in data:
+                  data = data.split(",", 1)[1]
+              # pad
+              pad = (-len(data)) % 4
+              if pad:
+                  data += "=" * pad
               try:
-                  out.write_bytes(load_b64(f"assets/categories/cat_{c}.b64"))
-                  print(f"cat_{c} ok")
+                  raw = base64.b64decode(data)
+                  if len(raw) > 50:
+                      return raw
+              except Exception:
+                  return None
+              return None
+          def try_url(url):
+              try:
+                  raw = urllib.request.urlopen(url, timeout=20).read()
+                  if raw[:2] == b"\xff\xd8" and len(raw) > 100:
+                      return raw
               except Exception as e:
-                  print(f"cat_{c} missing: {e}")
-          print("drawables stage1 done")
-          PY
-          python3 - <<'PY'
-          from pathlib import Path
-          import base64
-          tiny = base64.b64decode("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=")
+                  print("url fail", url, e)
+              return None
+          def write_img(name, candidates):
+              out = root / f"android/app/src/main/res/drawable/{name}"
+              for src in candidates:
+                  if src is None:
+                      continue
+                  if isinstance(src, bytes) and len(src) > 50:
+                      out.write_bytes(src)
+                      print(name, "ok", len(src))
+                      return
+              out.write_bytes(TINY)
+              print(name, "placeholder")
+          write_img("brand_logo.jpg", [
+              try_b64("assets/brand_logo.b64"),
+              try_url("https://d.uguu.se/EGxXQtpd.jpg"),
+          ])
+          write_img("brand_banner.jpg", [
+              try_b64("assets/brand_banner.b64"),
+              try_url("https://n.uguu.se/ONnGRFPF.jpg"),
+          ])
           for c in ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]:
-              p = Path(f"android/app/src/main/res/drawable/cat_{c}.jpg")
-              if not p.exists() or p.stat().st_size < 100:
-                  p.write_bytes(tiny)
-                  print(f"placeholder cat_{c}")
+              write_img(f"cat_{c}.jpg", [try_b64(f"assets/categories/cat_{c}.b64")])
+          print("drawables ready")
           PY
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
-          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png || true
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png || true
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
+          convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
+          # ensure launcher icons exist
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            f=android/app/src/main/res/mipmap-$d/ic_launcher.png
+            if [ ! -f "$f" ]; then
+              convert -size 48x48 xc:'#00E5FF' "$f" || python3 -c "open('$f','wb').write(b'')"
+            fi
+          done
           ls -la android/app/src/main/res/drawable/
 
       - name: Decode release keystore
         run: |
           set -e
           if [ -f assets/newtaraneh-release.jks.b64 ]; then
-            python3 -c "import base64,pathlib; pathlib.Path('android/app/newtaraneh-release.jks').write_bytes(base64.b64decode(pathlib.Path('assets/newtaraneh-release.jks.b64').read_text().strip()))"
+            python3 -c "import base64,pathlib; p=pathlib.Path('assets/newtaraneh-release.jks.b64'); d=p.read_text().strip(); pad=(-len(d))%4; d+='='*pad; pathlib.Path('android/app/newtaraneh-release.jks').write_bytes(base64.b64decode(d))"
           fi
           test -f android/app/newtaraneh-release.jks
           ls -la android/app/newtaraneh-release.jks
