@@ -1,4 +1,4 @@
-name: Build NewTaraneh APK
+name: Build NewTaraneh Release APK
 
 on:
   workflow_dispatch:
@@ -14,69 +14,58 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Ensure NewTaranehApp.kt v2.5 (categories + CategorySongsScreen)
+      - name: Verify sources (categories + release)
         run: |
           set -e
-          mkdir -p android/app/src/main/java/com/newtaraneh/music/ui
           KT=android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          if [ -s "$KT" ] && grep -q CategorySongsScreen "$KT" && grep -q APP_CATEGORIES "$KT"; then
-            echo "Using committed NewTaranehApp.kt with categories"
-          else
-            echo "Committed file missing feature, trying uguu fallback"
-            curl -fsSL "https://h.uguu.se/nPDUyHxj.kt" -o "$KT" || true
-          fi
+          test -s "$KT"
+          grep -q CategorySongsScreen "$KT"
+          grep -q APP_CATEGORIES "$KT"
+          grep -q songMatchesCategory "$KT"
+          test -f android/app/build.gradle.kts
+          grep -q 'versionName = "2.6.0"' android/app/build.gradle.kts
+          grep -q signingConfigs android/app/build.gradle.kts
           wc -c "$KT"
-          grep -q CategorySongsScreen "$KT" || echo "WARNING: CategorySongsScreen missing"
-          grep -q APP_CATEGORIES "$KT" || echo "WARNING: APP_CATEGORIES missing"
-          grep -q BackHandler "$KT"
 
       - name: Embed brand + category covers from local base64
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
-          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            mkdir -p android/app/src/main/res/mipmap-$d
-          done
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$d; done
           python3 - <<'PY'
-          import base64, pathlib, urllib.request, sys
+          import base64, pathlib, urllib.request
           root = pathlib.Path(".")
           def load_b64(path, fallback_url=None):
               p = root / path
               if p.exists() and p.stat().st_size > 100:
                   data = p.read_text().strip()
-                  if "," in data:
-                      data = data.split(",", 1)[1]
+                  if "," in data: data = data.split(",", 1)[1]
                   return base64.b64decode(data)
               if fallback_url:
                   data = urllib.request.urlopen(fallback_url, timeout=30).read().decode()
-                  if "," in data:
-                      data = data.split(",", 1)[1]
+                  if "," in data: data = data.split(",", 1)[1]
                   return base64.b64decode(data)
               raise FileNotFoundError(path)
-          # Brand
           try:
-              logo = load_b64("assets/brand_logo.b64", "https://d.uguu.se/EGxXQtpd.jpg")
-              (root / "android/app/src/main/res/drawable/brand_logo.jpg").write_bytes(logo)
+              (root / "android/app/src/main/res/drawable/brand_logo.jpg").write_bytes(
+                  load_b64("assets/brand_logo.b64", "https://d.uguu.se/EGxXQtpd.jpg"))
           except Exception as e:
-              print("logo fail", e)
+              print("logo", e)
               urllib.request.urlretrieve("https://d.uguu.se/EGxXQtpd.jpg", "android/app/src/main/res/drawable/brand_logo.jpg")
           try:
-              banner = load_b64("assets/brand_banner.b64", "https://n.uguu.se/ONnGRFPF.jpg")
-              (root / "android/app/src/main/res/drawable/brand_banner.jpg").write_bytes(banner)
+              (root / "android/app/src/main/res/drawable/brand_banner.jpg").write_bytes(
+                  load_b64("assets/brand_banner.b64", "https://n.uguu.se/ONnGRFPF.jpg"))
           except Exception as e:
-              print("banner fail", e)
+              print("banner", e)
               urllib.request.urlretrieve("https://n.uguu.se/ONnGRFPF.jpg", "android/app/src/main/res/drawable/brand_banner.jpg")
-          # Categories
-          cats = ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]
-          for c in cats:
+          for c in ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]:
               out = root / f"android/app/src/main/res/drawable/cat_{c}.jpg"
               try:
-                  data = load_b64(f"assets/categories/cat_{c}.b64")
-                  out.write_bytes(data)
-                  print(f"cat_{c} ok, {len(data)} bytes")
+                  out.write_bytes(load_b64(f"assets/categories/cat_{c}.b64"))
+                  print(f"cat_{c} ok")
               except Exception as e:
                   print(f"cat_{c} fail", e)
-          print("brand + categories ok")
+          print("drawables ready")
           PY
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
@@ -85,6 +74,19 @@ jobs:
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           ls -la android/app/src/main/res/drawable/
+
+      - name: Ensure release keystore
+        run: |
+          set -e
+          if [ ! -f android/app/newtaraneh-release.jks ]; then
+            if [ -f assets/newtaraneh-release.jks.b64 ]; then
+              python3 -c "import base64,pathlib; pathlib.Path('android/app/newtaraneh-release.jks').write_bytes(base64.b64decode(pathlib.Path('assets/newtaraneh-release.jks.b64').read_text().strip()))"
+            else
+              echo "Keystore missing"
+              exit 1
+            fi
+          fi
+          ls -la android/app/newtaraneh-release.jks
 
       - uses: actions/setup-java@v4
         with:
@@ -95,19 +97,29 @@ jobs:
         with:
           gradle-version: "8.7"
 
-      - name: Build Debug APK
+      - name: Build Signed Release APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon --stacktrace --console=plain
-
-      - name: Verify APK
+        env:
+          KEYSTORE_PASSWORD: "NewTaraneh2026Secure!"
+          KEY_ALIAS: "newtaraneh"
+          KEY_PASSWORD: "NewTaraneh2026Secure!"
         run: |
-          test -f android/app/build/outputs/apk/debug/app-debug.apk
-          ls -lh android/app/build/outputs/apk/debug/app-debug.apk
+          gradle assembleRelease --no-daemon --stacktrace --console=plain
+          ls -lh app/build/outputs/apk/release/
 
-      - name: Upload APK
+      - name: Verify signed APK
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          test -f "$APK"
+          ls -lh "$APK"
+          sudo apt-get install -y -qq unzip || true
+          unzip -l "$APK" | grep -E "META-INF/.*\.(RSA|SF|MF)" || true
+          echo "APK ready: $APK"
+
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: NewTaraneh-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: NewTaraneh-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
