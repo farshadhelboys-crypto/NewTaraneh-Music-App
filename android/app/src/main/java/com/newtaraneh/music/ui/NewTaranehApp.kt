@@ -1,3 +1,5 @@
 package com.newtaraneh.music.ui
 
-// truncated for this call - use full in next
+// Full NewTaranehApp.kt with categories will be restored in next commit.
+// For now this prevents broken state.
+fun NewTaranehApp() {}
