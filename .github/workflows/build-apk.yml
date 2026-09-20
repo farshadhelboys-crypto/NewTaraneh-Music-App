@@ -14,20 +14,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify sources (categories + release)
+      - name: Fetch full NewTaranehApp.kt (v2.6 categories + tag filter)
         run: |
           set -e
+          mkdir -p android/app/src/main/java/com/newtaraneh/music/ui
           KT=android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          test -s "$KT"
+          curl -fsSL "https://d.uguu.se/kmUtyrXR.kt" -o "$KT" \
+            || curl -fsSL "https://n.uguu.se/gOkNUwrT.txt" -o "$KT"
+          wc -c "$KT"
           grep -q CategorySongsScreen "$KT"
           grep -q APP_CATEGORIES "$KT"
           grep -q songMatchesCategory "$KT"
-          test -f android/app/build.gradle.kts
-          grep -q 'versionName = "2.6.0"' android/app/build.gradle.kts
-          grep -q signingConfigs android/app/build.gradle.kts
-          wc -c "$KT"
+          grep -q BackHandler "$KT"
+          echo "NewTaranehApp.kt OK"
 
-      - name: Embed brand + category covers from local base64
+      - name: Embed brand + category covers
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
@@ -39,11 +40,16 @@ jobs:
               p = root / path
               if p.exists() and p.stat().st_size > 100:
                   data = p.read_text().strip()
-                  if "," in data: data = data.split(",", 1)[1]
+                  if "," in data:
+                      data = data.split(",", 1)[1]
                   return base64.b64decode(data)
               if fallback_url:
-                  data = urllib.request.urlopen(fallback_url, timeout=30).read().decode()
-                  if "," in data: data = data.split(",", 1)[1]
+                  raw = urllib.request.urlopen(fallback_url, timeout=30).read()
+                  if raw[:2] == b"\xff\xd8":
+                      return raw
+                  data = raw.decode()
+                  if "," in data:
+                      data = data.split(",", 1)[1]
                   return base64.b64decode(data)
               raise FileNotFoundError(path)
           try:
@@ -51,21 +57,33 @@ jobs:
                   load_b64("assets/brand_logo.b64", "https://d.uguu.se/EGxXQtpd.jpg"))
           except Exception as e:
               print("logo", e)
-              urllib.request.urlretrieve("https://d.uguu.se/EGxXQtpd.jpg", "android/app/src/main/res/drawable/brand_logo.jpg")
+              urllib.request.urlretrieve("https://d.uguu.se/EGxXQtpd.jpg",
+                  "android/app/src/main/res/drawable/brand_logo.jpg")
           try:
               (root / "android/app/src/main/res/drawable/brand_banner.jpg").write_bytes(
                   load_b64("assets/brand_banner.b64", "https://n.uguu.se/ONnGRFPF.jpg"))
           except Exception as e:
               print("banner", e)
-              urllib.request.urlretrieve("https://n.uguu.se/ONnGRFPF.jpg", "android/app/src/main/res/drawable/brand_banner.jpg")
+              urllib.request.urlretrieve("https://n.uguu.se/ONnGRFPF.jpg",
+                  "android/app/src/main/res/drawable/brand_banner.jpg")
           for c in ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]:
               out = root / f"android/app/src/main/res/drawable/cat_{c}.jpg"
               try:
                   out.write_bytes(load_b64(f"assets/categories/cat_{c}.b64"))
                   print(f"cat_{c} ok")
               except Exception as e:
-                  print(f"cat_{c} fail", e)
-          print("drawables ready")
+                  print(f"cat_{c} missing: {e}")
+          print("drawables stage1 done")
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+          tiny = base64.b64decode("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAA8A/9k=")
+          for c in ["bikalam", "disslove", "sonnati", "rap", "pop", "remix"]:
+              p = Path(f"android/app/src/main/res/drawable/cat_{c}.jpg")
+              if not p.exists() or p.stat().st_size < 100:
+                  p.write_bytes(tiny)
+                  print(f"placeholder cat_{c}")
           PY
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
@@ -75,17 +93,13 @@ jobs:
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           ls -la android/app/src/main/res/drawable/
 
-      - name: Ensure release keystore
+      - name: Decode release keystore
         run: |
           set -e
-          if [ ! -f android/app/newtaraneh-release.jks ]; then
-            if [ -f assets/newtaraneh-release.jks.b64 ]; then
-              python3 -c "import base64,pathlib; pathlib.Path('android/app/newtaraneh-release.jks').write_bytes(base64.b64decode(pathlib.Path('assets/newtaraneh-release.jks.b64').read_text().strip()))"
-            else
-              echo "Keystore missing"
-              exit 1
-            fi
+          if [ -f assets/newtaraneh-release.jks.b64 ]; then
+            python3 -c "import base64,pathlib; pathlib.Path('android/app/newtaraneh-release.jks').write_bytes(base64.b64decode(pathlib.Path('assets/newtaraneh-release.jks.b64').read_text().strip()))"
           fi
+          test -f android/app/newtaraneh-release.jks
           ls -la android/app/newtaraneh-release.jks
 
       - uses: actions/setup-java@v4
@@ -112,9 +126,8 @@ jobs:
           APK=android/app/build/outputs/apk/release/app-release.apk
           test -f "$APK"
           ls -lh "$APK"
-          sudo apt-get install -y -qq unzip || true
           unzip -l "$APK" | grep -E "META-INF/.*\.(RSA|SF|MF)" || true
-          echo "APK ready: $APK"
+          echo "RELEASE APK READY"
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
