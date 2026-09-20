@@ -14,23 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch NewTaranehApp.kt v2.4 (like anim + search EQ)
+      - name: Fetch NewTaranehApp.kt v2.5 (categories)
         run: |
           set -e
           mkdir -p android/app/src/main/java/com/newtaraneh/music/ui
-          curl -fsSL "https://h.uguu.se/nPDUyHxj.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          curl -fsSL "https://h.uguu.se/BJVvelap.kt" -o android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
           wc -c android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q SearchEqualizerBackground android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q likeScale android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
-          grep -q BackHandler android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q CategorySongsScreen android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q APP_CATEGORIES android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
+          grep -q cat_bikalam android/app/src/main/java/com/newtaraneh/music/ui/NewTaranehApp.kt
 
-      - name: Embed brand images
+      - name: Embed brand + category drawables
         run: |
           set -e
           mkdir -p android/app/src/main/res/drawable
           for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do mkdir -p android/app/src/main/res/mipmap-$d; done
           curl -fsSL "https://d.uguu.se/EGxXQtpd.jpg" -o android/app/src/main/res/drawable/brand_logo.jpg
           curl -fsSL "https://n.uguu.se/ONnGRFPF.jpg" -o android/app/src/main/res/drawable/brand_banner.jpg
+          curl -fsSL "https://n.uguu.se/zsdsLdVK.jpg" -o android/app/src/main/res/drawable/cat_bikalam.jpg
+          curl -fsSL "https://d.uguu.se/ehdSuYYd.jpg" -o android/app/src/main/res/drawable/cat_disslove.jpg
+          curl -fsSL "https://h.uguu.se/MoNpzQoD.jpg" -o android/app/src/main/res/drawable/cat_sonnati.jpg
+          curl -fsSL "https://n.uguu.se/DtQwQObp.jpg" -o android/app/src/main/res/drawable/cat_pop.jpg
+          curl -fsSL "https://h.uguu.se/WXyxFxim.jpg" -o android/app/src/main/res/drawable/cat_rap.jpg
+          curl -fsSL "https://n.uguu.se/BeTGaXif.jpg" -o android/app/src/main/res/drawable/cat_remix.jpg
           sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert android/app/src/main/res/drawable/brand_logo.jpg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
